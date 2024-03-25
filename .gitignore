@@ -30,3 +30,14 @@ doc/api/
 ._.DS_Store
 **/.DS_Store
 **/._.DS_Store
+
+# Don't include any generated libraries, .o, .so, .dylib, .a, .dll
+**/*.o
+**/*.so
+**/*.dylib
+**/*.a
+**/*.dll
+
+# Emacs backup files
+.*~
+**/*~
