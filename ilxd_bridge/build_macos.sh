@@ -13,23 +13,29 @@ XCODE_DEV_DIR=$(xcode-select --print-path)
 # Set the path to the macOS SDK
 MACOS_SDK_PATH=$(xcrun --sdk macosx --show-sdk-path)
 
-# if IXLD_HOME is not set, exit with an error
-if [ -z "$IXLD_HOME" ]; then
-  echo "IXLD_HOME path not found"
-  echo "e.g. export IXLD_HOME=/Users/gubatron/workspace/ilxd"
+# if ILXD_HOME is not set, exit with an error
+if [ -z "$ILXD_HOME" ]; then
+  echo "ILXD_HOME path not found"
+  echo "e.g. export ILXD_HOME=/Users/gubatron/workspace/ilxd"
   echo ""
   echo "If you don't have ilxd try git cloning it into another folder:"
   echo "git clone git@github.com:project-illium/ilxd.git"
   exit 1
 fi
 
+# Make sure ILXD_HOME exists
+if [ ! -d "$ILXD_HOME" ]; then
+  echo "The folder $ILXD_HOME does not exist."
+  exit 1 # Exits the script with a status of 1 indicating an error.
+fi
+
 # Remove any previous build of libillium_zk
-if [ -f "${IXLD_HOME}/zk/rust/target/${RUST_TARGET_ARCH}/release/libillium_zk.a" ]; then
-  rm -f ${IXLD_HOME}/zk/rust/target/${RUST_TARGET_ARCH}/release/libillium_zk.*
+if [ -f "${ILXD_HOME}/zk/rust/target/${RUST_TARGET_ARCH}/release/libillium_zk.a" ]; then
+  rm -f ${ILXD_HOME}/zk/rust/target/${RUST_TARGET_ARCH}/release/libillium_zk.*
 fi
 
 # Build libillium_zk.a
-pushd ${IXLD_HOME}/zk/rust
+pushd ${ILXD_HOME}/zk/rust
 rustup target add aarch64-apple-darwin
 export MACOSX_DEPLOYMENT_TARGET=10.13
 # this should ideally set mmacosx-version-min=10.13 in the rust static libraries
@@ -37,7 +43,7 @@ cargo build --target ${RUST_TARGET_ARCH} --release
 popd
 
 # Copy libillium_zk.a into our bridge's macos/ folder
-cp ${IXLD_HOME}/zk/rust/target/${RUST_TARGET_ARCH}/release/libillium_zk.a ..
+cp ${ILXD_HOME}/zk/rust/target/${RUST_TARGET_ARCH}/release/libillium_zk.a ..
 
 # Set the Objective-C shared library target architecture
 ARCHS=("arm64")
@@ -56,7 +62,7 @@ do
   # Create the shared library
   clang -dynamiclib -o "libilxd_bridge_${OS_NAME}_${ARCH}.dylib" \
       "IlxdBridge_${OS_NAME}_${ARCH}.o" \
-      ${IXLD_HOME}/zk/rust/target/aarch64-apple-darwin/release/libillium_zk.a \
+      ${ILXD_HOME}/zk/rust/target/aarch64-apple-darwin/release/libillium_zk.a \
       -arch ${ARCH} \
       -isysroot "${MACOS_SDK_PATH}" \
       -fobjc-arc \
