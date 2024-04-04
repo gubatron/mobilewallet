@@ -61,7 +61,8 @@ class IlxdBridge {
   // int create_proof_ffi(const char* lurk_program, const char* private_params, const char* public_params, size_t max_steps, uint8_t* proof, size_t* proof_len, uint8_t* output_tag, uint8_t* output_val);
   static final _createProof = _dylib.lookupFunction<Int32 Function(Pointer<Utf8>, Pointer<Utf8>, Pointer<Utf8>, IntPtr, Pointer<Uint8>, Pointer<IntPtr>, Pointer<Uint8>, Pointer<Uint8>), int Function(Pointer<Utf8>, Pointer<Utf8>, Pointer<Utf8>, int, Pointer<Uint8>, Pointer<IntPtr>, Pointer<Uint8>, Pointer<Uint8>)>('create_proof_ffi');
 
-  static Future<Uint8List> lurkCommit(String expr) async {
+  // int lurk_commit(const char* expr, uint8_t* out);
+  static Uint8List lurkCommit(String expr) {
     final exprPtr = expr.toNativeUtf8();
     final outputBuffer = malloc.allocate<Uint8>(OutLen);
 
@@ -81,7 +82,7 @@ class IlxdBridge {
   }
 
   //int create_proof_ffi(const char* lurk_program, const char* private_params, const char* public_params, size_t max_steps, uint8_t* proof, size_t* proof_len, uint8_t* output_tag, uint8_t* output_val);
-  static Future<void> createProof(String lurkProgram, String privateParams, String publicParams, int maxSteps, Uint8List proof, Uint8List outputTag, Uint8List outputVal) async {
+  static void createProof(String lurkProgram, String privateParams, String publicParams, int maxSteps, Uint8List proof, Uint8List outputTag, Uint8List outputVal) {
     final lurkProgramPtr = lurkProgram.toNativeUtf8();
     final privateParamsPtr = privateParams.toNativeUtf8();
     final publicParamsPtr = publicParams.toNativeUtf8();
