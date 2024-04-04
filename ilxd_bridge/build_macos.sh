@@ -1,5 +1,20 @@
 #!/usr/bin/env bash
-#print the commands being executed
+# if ILXD_HOME is not set, exit with an error
+if [ -z "$ILXD_HOME" ]; then
+  echo "ILXD_HOME path not found"
+  echo "e.g. export ILXD_HOME=/Users/gubatron/workspace/ilxd"
+  echo ""
+  echo "If you don't have ilxd try git cloning it into another folder:"
+  echo "git clone git@github.com:project-illium/ilxd.git"
+  exit 1
+fi
+
+# Make sure ILXD_HOME exists
+if [ ! -d "${ILXD_HOME}" ]; then
+  echo "The folder ${ILXD_HOME} does not exist."
+  exit 1
+fi
+
 set -x
 
 rm_if_exists() {
@@ -36,22 +51,6 @@ XCODE_DEV_DIR=$(xcode-select --print-path)
 # Set the path to the macOS SDK
 MACOS_SDK_PATH=$(xcrun --sdk macosx --show-sdk-path)
 
-# if ILXD_HOME is not set, exit with an error
-if [ -z "$ILXD_HOME" ]; then
-  echo "ILXD_HOME path not found"
-  echo "e.g. export ILXD_HOME=/Users/gubatron/workspace/ilxd"
-  echo ""
-  echo "If you don't have ilxd try git cloning it into another folder:"
-  echo "git clone git@github.com:project-illium/ilxd.git"
-  exit 1
-fi
-
-# Make sure ILXD_HOME exists
-if [ ! -d "${ILXD_HOME}" ]; then
-  echo "The folder ${ILXD_HOME} does not exist."
-  exit 1
-fi
-
 rm_if_exists "${ILXD_HOME}/zk/rust/target/${RUST_TARGET_ARCH}/release/libillium_zk.a"
 rm_if_exists "${ILXD_HOME}/crypto/rust/target/${RUST_TARGET_ARCH}/release/libillium_crypto.a"
 
@@ -65,7 +64,7 @@ cp ${ILXD_HOME}/zk/rust/target/${RUST_TARGET_ARCH}/release/libillium_zk.a .
 #cp ${ILXD_HOME}/crypto/rust/target/${RUST_TARGET_ARCH}/release/libillium_crypto.a .
 
 # Compile the Objective-C code
-clang -c ilxd_bridge.m -o "ilxd_bridge_${OS_NAME}_${ARCH}.o" \
+clang -c ilxd_zk_bridge.m -o "ilxd_zk_bridge_${OS_NAME}_${ARCH}.o" \
     -arch ${ARCH} \
     -isysroot "${MACOS_SDK_PATH}" \
     -fobjc-arc \
@@ -73,8 +72,8 @@ clang -c ilxd_bridge.m -o "ilxd_bridge_${OS_NAME}_${ARCH}.o" \
     -mmacosx-version-min=${MAC_OS_VERSION_MIN}
 
 # Create the shared library
-clang -dynamiclib -o "libilxd_bridge_${OS_NAME}_${ARCH}.dylib" \
-    "ilxd_bridge_${OS_NAME}_${ARCH}.o" \
+clang -dynamiclib -o "libilxd_zk_bridge_${OS_NAME}_${ARCH}.dylib" \
+    "ilxd_zk_bridge_${OS_NAME}_${ARCH}.o" \
     ${ILXD_HOME}/zk/rust/target/aarch64-apple-darwin/release/libillium_zk.a \
     -arch ${ARCH} \
     -isysroot "${MACOS_SDK_PATH}" \
@@ -89,8 +88,8 @@ clang -dynamiclib -o "libilxd_bridge_${OS_NAME}_${ARCH}.dylib" \
 # back to ilxd_bridge/
 popd
 
-if [ ! -f "macos/libilxd_bridge_${OS_NAME}_${ARCH}.dylib" ]; then
-    echo "Error: libilxd_bridge_${OS_NAME}_${ARCH}.dylib not found"
+if [ ! -f "macos/libilxd_zk_bridge_${OS_NAME}_${ARCH}.dylib" ]; then
+    echo "Error: libilxd_zk_bridge_${OS_NAME}_${ARCH}.dylib not found"
     exit 1
 fi
 
@@ -99,7 +98,7 @@ ls -l macos/**
 echo ""
 
 # Now build the dart component
-dart pub get
+#dart pub get
 dart run test/test_macos.dart
 
 set +x

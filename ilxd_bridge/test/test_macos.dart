@@ -3,13 +3,13 @@
 // For a copy, see <https://github.com/project-illium/mobilewallet/blob/main/LICENSE>
 import 'dart:io';
 import 'dart:typed_data';
-import 'package:ilxd_bridge/ilxd_bridge.dart';
+import 'package:ilxd_bridge/ilxd_zk_bridge.dart';
 
 void testLurkCommit() {
   final expr = '555'; // Example Lurk expression
 
   try {
-    final result = IlxdBridge.lurkCommit(expr);
+    final result = IlxdZkBridge.lurkCommit(expr);
     print('Lurk commit result: ${result.length} bytes');
     print('Hex representation: ${result.map((b) => b.toRadixString(16).padLeft(2, '0')).join()}');
   } catch (e) {
@@ -31,7 +31,7 @@ void testCreateProof() {
   outputVal.fillRange(0, 32, 0);
 
   try {
-   IlxdBridge.createProof(lurkProgram, privateParams, publicParams, maxSteps, proof, outputTag, outputVal);
+    IlxdZkBridge.createProof(lurkProgram, privateParams, publicParams, maxSteps, proof, outputTag, outputVal);
   } catch (e) {
     print('Error: $e');
   }
