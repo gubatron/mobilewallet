@@ -57,11 +57,11 @@ rm_if_exists "${ILXD_HOME}/crypto/rust/target/${RUST_TARGET_ARCH}/release/libill
 # Build libillium_zk.a
 build_rust_crate_archive ${ILXD_HOME}/zk/rust ${RUST_TARGET_ARCH}
 # Build libillium_crypto.a
-#build_rust_crate_archive ${ILXD_HOME}/crypto/rust ${RUST_TARGET_ARCH}
+build_rust_crate_archive ${ILXD_HOME}/crypto/rust ${RUST_TARGET_ARCH}
 
 # Copy libillium_zk.a and libillium_crypto.a into our bridge's macos/ folder
 cp ${ILXD_HOME}/zk/rust/target/${RUST_TARGET_ARCH}/release/libillium_zk.a .
-#cp ${ILXD_HOME}/crypto/rust/target/${RUST_TARGET_ARCH}/release/libillium_crypto.a .
+cp ${ILXD_HOME}/crypto/rust/target/${RUST_TARGET_ARCH}/release/libillium_crypto.a .
 
 # Compile the Objective-C code
 clang -c ilxd_zk_bridge.m -o "ilxd_zk_bridge_${OS_NAME}_${ARCH}.o" \
@@ -71,7 +71,14 @@ clang -c ilxd_zk_bridge.m -o "ilxd_zk_bridge_${OS_NAME}_${ARCH}.o" \
     -fmodules \
     -mmacosx-version-min=${MAC_OS_VERSION_MIN}
 
-# Create the shared library
+clang -c ilxd_crypto_bridge.m -o "ilxd_crypto_bridge_${OS_NAME}_${ARCH}.o" \
+    -arch ${ARCH} \
+    -isysroot "${MACOS_SDK_PATH}" \
+    -fobjc-arc \
+    -fmodules \
+    -mmacosx-version-min=${MAC_OS_VERSION_MIN}
+
+# Create the shared libraries
 clang -dynamiclib -o "libilxd_zk_bridge_${OS_NAME}_${ARCH}.dylib" \
     "ilxd_zk_bridge_${OS_NAME}_${ARCH}.o" \
     ${ILXD_HOME}/zk/rust/target/aarch64-apple-darwin/release/libillium_zk.a \
@@ -83,8 +90,20 @@ clang -dynamiclib -o "libilxd_zk_bridge_${OS_NAME}_${ARCH}.dylib" \
     -framework Foundation \
     -framework SystemConfiguration \
     -lc++ \
-    -Wl,-exported_symbols_list,../exported_symbols.txt
+    -Wl,-exported_symbols_list,../zk_symbols.txt
 
+clang -dynamiclib -o "libilxd_crypto_bridge_${OS_NAME}_${ARCH}.dylib" \
+    "ilxd_crypto_bridge_${OS_NAME}_${ARCH}.o" \
+    ${ILXD_HOME}/crypto/rust/target/aarch64-apple-darwin/release/libillium_crypto.a \
+    -arch ${ARCH} \
+    -isysroot "${MACOS_SDK_PATH}" \
+    -fobjc-arc \
+    -fmodules \
+    -mmacosx-version-min=${MAC_OS_VERSION_MIN} \
+    -framework Foundation \
+    -framework SystemConfiguration \
+    -lc++ \
+    -Wl,-exported_symbols_list,../crypto_symbols.txt
 # back to ilxd_bridge/
 popd
 
@@ -93,12 +112,16 @@ if [ ! -f "macos/libilxd_zk_bridge_${OS_NAME}_${ARCH}.dylib" ]; then
     exit 1
 fi
 
+if [ ! -f "macos/libilxd_crypto_bridge_${OS_NAME}_${ARCH}.dylib" ]; then
+    echo "Error: libilxd_crypto_bridge_${OS_NAME}_${ARCH}.dylib not found"
+    exit 1
+fi
+
 echo "ilxd_bridge/macos:"
 ls -l macos/**
 echo ""
 
 # Now build the dart component
-#dart pub get
+dart pub get
 dart run test/test_macos.dart
-
 set +x
