@@ -31,7 +31,7 @@ class IlxdZkBridge {
       }
 
       final output = Uint8List.fromList(outputBuffer.asTypedList(OutLen));
-      print('ilxd_bridge:LurkBridge.lurkCommit(...) invoked with no issues');
+      print('IlxdZkBridge::lurkCommit(...) invoked with no issues');
       return output;
     } finally {
       malloc.free(exprPtr);
@@ -67,7 +67,7 @@ class IlxdZkBridge {
     }
 
     // print the output tags and output vals
-    print('IlxdBridge::createProof() -> ');
+    print('IlxdZkBridge::createProof() -> ');
     for (int i = 0; i < 32; i++) {
       print('outputTag[$i] = ${outputTag[i]}');
       print('outputVal[$i] = ${outputVal[i]}');
