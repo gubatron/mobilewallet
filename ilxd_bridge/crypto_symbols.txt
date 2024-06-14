@@ -1,0 +1,6 @@
+_generate_secret_key
+_secret_key_from_seed
+_priv_to_pub
+_compressed_to_full
+_sign
+_verify

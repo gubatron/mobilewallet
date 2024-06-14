@@ -1,0 +1,19 @@
+name: ilxd_bridge
+description: A dart package for interacting with the ILXD rust libraries.
+version: 1.0.0
+
+environment:
+  sdk: '>=2.12.0 <3.0.0'
+
+dependencies:
+  ffi: ^2.0.1
+  crypto: ^3.0.2
+
+flutter:
+  plugin:
+    platforms:
+      macos:
+        pluginClass: IlxdBridge
+        vendored_libraries:
+          - libilxd_bridge_macos_arm64.dylib
+          - libillium_zk.a
