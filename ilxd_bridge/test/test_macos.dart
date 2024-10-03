@@ -7,22 +7,40 @@ import 'package:ilxd_bridge/ilxd_zk_bridge.dart';
 import 'package:ilxd_bridge/ilxd_crypto_bridge.dart';
 import 'package:crypto/crypto.dart';
 
-void testLurkCommit() {
+int testLoadPublicParams() {
+  int failed = 0;
+  try {
+    print('testLoadPublicParams: Loading public parameters...');  
+    IlxdZkBridge.loadPublicParams();
+    print('testLoadPublicParams: Public parameters loaded successfully.');
+  } catch (e) {
+    print('testLoadPublicParams: Error: $e');
+    failed = 1;
+  }
+  return failed;
+}
+
+int testLurkCommit() {
+  int failed = 0;
   final expr = '555'; // Example Lurk expression
 
   try {
     final result = IlxdZkBridge.lurkCommit(expr);
-    print('Lurk commit result: ${result.length} bytes');
-    print('Hex representation: ${result.map((b) => b.toRadixString(16).padLeft(2, '0')).join()}');
+    print('testLurkCommit: Lurk commit result: ${result.length} bytes');
+    print('testLurkCommit: Hex representation: ${result.map((b) => b.toRadixString(16).padLeft(2, '0')).join()}');
   } catch (e) {
-    print('Error: $e');
+    print('testLurkCommit Error: $e');
+    failed = 1;
   }
+  return failed;
 }
 
-void testCreateProof() {
-  //String lurkProgram, String privateParams, String publicParams, int maxSteps, Uint8List proof, Uint8List outputTag, Uint8List outputVal
-  String lurkProgram = '(+ 1 2)';
-  String privateParams = '';
+int testCreateProof() {
+  int failed = 0;
+  String lurkProgram = '''(lambda (priv pub) (letrec ((or (lambda (a b)
+                                                             (eval (cons 'coproc_or (cons a (cons b nil)))))))
+                                                     (= (or 19 15) 31)))''';  
+  String privateParams = "(cons 7 8)";
   String publicParams = '';
   int maxSteps = 100;
   Uint8List proof = Uint8List(32);
@@ -34,43 +52,56 @@ void testCreateProof() {
 
   try {
     IlxdZkBridge.createProof(lurkProgram, privateParams, publicParams, maxSteps, proof, outputTag, outputVal);
+    print('testCreateProof: success');
   } catch (e) {
-    print('Error: $e');
+    print('testCreateProof Error: $e');
+    failed = 1;
   }
+  return failed;
 }
 
-void testGenerateSecretKey() {
+int testGenerateSecretKey() {
+  int failed = 0;
   try {
     final secretKey = IlxdCryptoBridge.generateSecretKey();
-    print('Generated secret key: ${secretKey.map((b) => b.toRadixString(16).padLeft(2, '0')).join()}');
+    print('testGenerateSecretKey: Generated secret key: ${secretKey.map((b) => b.toRadixString(16).padLeft(2, '0')).join()}');
   } catch (e) {
-    print('Error: $e');
+    print('testGenerateSecretKey Error: $e');
+    failed = 1;
   }
+  return failed;
 }
 
-void testSecretKeyFromSeed() {
+int testSecretKeyFromSeed() {
+  int failed = 0;
   final seed = Uint8List.fromList(List.generate(32, (index) => index));
 
   try {
     final secretKey = IlxdCryptoBridge.secretKeyFromSeed(seed);
-    print('Secret key from seed: ${secretKey.map((b) => b.toRadixString(16).padLeft(2, '0')).join()}');
+    print('testSecretKeyFromSeed: Secret key from seed: ${secretKey.map((b) => b.toRadixString(16).padLeft(2, '0')).join()}');
   } catch (e) {
-    print('Error: $e');
+    print('testSecretKeyFromSeed Error: $e');
+    failed = 1;
   }
+  return failed;
 }
 
-void testPrivToPub() {
+int testPrivToPub() {
+  int failed = 0;
   final privKey = IlxdCryptoBridge.generateSecretKey();
 
   try {
     final pubKey = IlxdCryptoBridge.privToPub(privKey);
-    print('Public key: ${pubKey.map((b) => b.toRadixString(16).padLeft(2, '0')).join()}');
+    print('testPrivToPub: Public key: ${pubKey.map((b) => b.toRadixString(16).padLeft(2, '0')).join()}');
   } catch (e) {
-    print('Error: $e');
+    print('testPrivToPub: Error: $e');
+    failed = 1;
   }
+  return failed;
 }
 
-void testCompressedToFull() {
+int testCompressedToFull() {
+  int failed = 0;
   final privKey = IlxdCryptoBridge.generateSecretKey();
   final pubKey = IlxdCryptoBridge.privToPub(privKey);
   final outX = Uint8List(32);
@@ -78,27 +109,33 @@ void testCompressedToFull() {
 
   try {
     IlxdCryptoBridge.compressedToFull(pubKey, outX, outY);
-    print('X-coordinate: ${outX.map((b) => b.toRadixString(16).padLeft(2, '0')).join()}');
-    print('Y-coordinate: ${outY.map((b) => b.toRadixString(16).padLeft(2, '0')).join()}');
+    print('testCompressedToFull: X-coordinate: ${outX.map((b) => b.toRadixString(16).padLeft(2, '0')).join()}');
+    print('testCompressedToFull: Y-coordinate: ${outY.map((b) => b.toRadixString(16).padLeft(2, '0')).join()}');
   } catch (e) {
-    print('Error: $e');
+    print('testCompressedToFull: Error: $e');
+    failed = 1;
   }
+  return failed;
 }
 
-void testSign() {
+int testSign() {
+  int failed = 0;
   final privKey = IlxdCryptoBridge.generateSecretKey();
   final message = 'Hello, world!';
   final messageDigest = Uint8List.fromList(sha256.convert(message.codeUnits).bytes);
 
   try {
     final signature = IlxdCryptoBridge.sign(privKey, messageDigest);
-    print('Signature: ${signature.map((b) => b.toRadixString(16).padLeft(2, '0')).join()}');
+    print('testSign: Signature: ${signature.map((b) => b.toRadixString(16).padLeft(2, '0')).join()}');
   } catch (e) {
-    print('Error: $e');
+    print('testSign: Error: $e');
+    failed = 1;
   }
+  return failed;
 }
 
-void testVerify() {
+int testVerify() {
+  int failed = 0;
   final privKey = IlxdCryptoBridge.generateSecretKey();
   final pubKey = IlxdCryptoBridge.privToPub(privKey);
   final message = 'Hello, world!';
@@ -109,19 +146,29 @@ void testVerify() {
 
   try {
     final isValid = IlxdCryptoBridge.verify(pubKey, messageDigest, sigR, sigS);
-    print('Signature is valid: $isValid');
+    print('testVerify: Signature is valid: $isValid');
   } catch (e) {
-    print('Error: $e');
+    print('testVerify: Error: $e');
+    failed = 1;
   }
+  return failed;
 }
 
 void main() async {
-  testLurkCommit();
-  testCreateProof();
-  testGenerateSecretKey();
-  testSecretKeyFromSeed();
-  testPrivToPub();
-  testCompressedToFull();
-  testSign();
-  testVerify();
+  int failed = 0;
+  failed += testLurkCommit();
+  failed += testLoadPublicParams();
+  failed += testCreateProof();
+  failed += testGenerateSecretKey();
+  failed += testSecretKeyFromSeed();
+  failed += testPrivToPub();
+  failed += testCompressedToFull();
+  failed += testSign();
+  failed += testVerify();
+
+  if (failed == 0) {
+    print('OK: test_macos: ALL TESTS PASSED.');
+  } else {
+    print('KO: test_macos: $failed failed tests.');
+  }
 }

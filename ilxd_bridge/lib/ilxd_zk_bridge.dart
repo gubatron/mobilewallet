@@ -19,6 +19,9 @@ class IlxdZkBridge {
   // int create_proof_ffi(const char* lurk_program, const char* private_params, const char* public_params, size_t max_steps, uint8_t* proof, size_t* proof_len, uint8_t* output_tag, uint8_t* output_val);
   static final _createProof = _dylib.lookupFunction<Int32 Function(Pointer<Utf8>, Pointer<Utf8>, Pointer<Utf8>, IntPtr, Pointer<Uint8>, Pointer<IntPtr>, Pointer<Uint8>, Pointer<Uint8>), int Function(Pointer<Utf8>, Pointer<Utf8>, Pointer<Utf8>, int, Pointer<Uint8>, Pointer<IntPtr>, Pointer<Uint8>, Pointer<Uint8>)>('create_proof_ffi');
 
+  // void load_public_params();
+  static final _loadPublicParams = _dylib.lookupFunction<Void Function(), void Function()>('load_public_params');
+
   // int lurk_commit(const char* expr, uint8_t* out);
   static Uint8List lurkCommit(String expr) {
     final exprPtr = expr.toNativeUtf8();
@@ -31,7 +34,6 @@ class IlxdZkBridge {
       }
 
       final output = Uint8List.fromList(outputBuffer.asTypedList(OutLen));
-      print('IlxdZkBridge::lurkCommit(...) invoked with no issues');
       return output;
     } finally {
       malloc.free(exprPtr);
@@ -60,23 +62,23 @@ class IlxdZkBridge {
     // set the value of proofLen inside proofLenPtr;
     final proofLenPtr = malloc.allocate<IntPtr>(1);
     proofLenPtr.value = proof.length;
+  
     final result = _createProof(lurkProgramPtr, privateParamsPtr, publicParamsPtr, maxSteps, proofPtr, proofLenPtr, outputTagPtr, outputValPtr);
 
     if (result != 0) {
       throw Exception('Proof creation failed with error code: $result');
     }
 
-    // print the output tags and output vals
-    print('IlxdZkBridge::createProof() -> ');
-    for (int i = 0; i < 32; i++) {
-      print('outputTag[$i] = ${outputTag[i]}');
-      print('outputVal[$i] = ${outputVal[i]}');
-      print('');
-    }
-
     malloc.free(lurkProgramPtr);
     malloc.free(privateParamsPtr);
     malloc.free(publicParamsPtr);
+    malloc.free(proofPtr);
+    malloc.free(outputTagPtr);
+    malloc.free(outputValPtr);
     malloc.free(proofLenPtr);
+  }
+
+  static void loadPublicParams() {
+    _loadPublicParams();
   }
 }
