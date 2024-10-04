@@ -20,6 +20,10 @@ class IlxdCommon {
       osName = 'android';
     } else if (Platform.isWindows) {
       osName = 'win';
+    } else if (Platform.isLinux) {
+      osName = 'linux';
+    } else {
+      throw UnsupportedError('IlxdCommon::getLibPath(): Unsupported OS: ${Platform.operatingSystem}');
     }
 
     if (Platform.version.contains('arm64') || Platform.version.contains('aarch64')) {
@@ -32,9 +36,7 @@ class IlxdCommon {
 
     if (Platform.isMacOS || Platform.isIOS) {
       libExt = 'dylib';
-    }
-
-    if (Platform.isWindows) {
+    } else if (Platform.isWindows) {
       libExt = 'dll';
     }
 
