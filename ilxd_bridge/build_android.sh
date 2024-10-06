@@ -1,4 +1,20 @@
 #!/usr/bin/env bash
+# Check if running in Docker by checking for Docker-specific files
+if grep -q docker /proc/1/cgroup 2>/dev/null; then
+    echo "build_android.sh: Running inside Docker container..."
+else
+    echo
+    echo
+    echo "build_android.sh: This script is intended to run inside a Docker container."
+    echo
+    echo
+    echo "build_android.sh: Run './docker_build_android.sh'"
+    echo
+    echo "build_android.sh: (Builds the docker container if necessary and then runs this script)"
+    echo 
+    echo
+    exit 1
+fi
 
 if [ -z "$ILXD_HOME" ]; then
   echo "ILXD_HOME path not found"
@@ -88,7 +104,6 @@ build_rust_for_android() {
 
 # Build Rust libraries for ARM and x86 architectures
 build_rust_for_android ${ILXD_HOME}/zk/rust aarch64-linux-android
-exit 0
 build_rust_for_android ${ILXD_HOME}/crypto/rust aarch64-linux-android
 
 build_rust_for_android ${ILXD_HOME}/zk/rust armv7-linux-androideabi
@@ -101,7 +116,7 @@ build_rust_for_android ${ILXD_HOME}/zk/rust x86_64-linux-android
 build_rust_for_android ${ILXD_HOME}/crypto/rust x86_64-linux-android
 
 # Get correct NDK toolchain path (for macOS)
-NDK_TOOLCHAIN_PATH=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/darwin-x86_64/bin
+NDK_TOOLCHAIN_PATH=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/${PREBUILT_DIR}/bin
 
 # Compile individual bridges for Android using the NDK
 
@@ -172,3 +187,4 @@ fi
 
 echo "ilxd_bridge/android:"
 ls -l android/*
+set +x

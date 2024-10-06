@@ -15,8 +15,6 @@ if [ ! -d "${ILXD_HOME}" ]; then
   exit 1
 fi
 
-set -x
-
 rm_if_exists() {
     if [ -f "$1" ]; then
         rm $1
@@ -124,4 +122,4 @@ echo ""
 # Now build the dart component
 dart pub get
 dart run test/test_macos.dart
-set +x
+
