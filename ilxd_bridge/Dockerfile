@@ -1,4 +1,4 @@
-# Use Ubuntu 20.04 as the base image
+# Use Ubuntu 24.04 as the base image
 FROM ubuntu:24.04
 
 # Set non-interactive mode for apt
@@ -47,7 +47,19 @@ RUN unzip dartsdk-linux-x64-release.zip -d /usr/lib
 ENV PATH="$PATH:/usr/lib/dart/bin"
 
 ENV ILXD_HOME=/workspace/ilxd
+
+# Install Android NDK r27b
+RUN wget https://dl.google.com/android/repository/android-ndk-r27b-linux.zip -O android-ndk-r27b.zip
+RUN mkdir -p /workspace
+RUN unzip android-ndk-r27b.zip -d /workspace
+RUN ln -s /workspace/android-ndk-r27b /workspace/android-ndk
 ENV ANDROID_NDK_HOME=/workspace/android-ndk
+ENV PATH="$PATH:${ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/linux-x86_64/bin"
+
+WORKDIR /workspace/mobilewallet/ilxd_bridge
 
 # Set the entry point
-CMD ["bash"]
+# CMD ["bash"]
+
+# Set build_android.sh as the entrypoint
+ENTRYPOINT ["./build_android.sh"]

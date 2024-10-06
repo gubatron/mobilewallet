@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Check if running in Docker by checking for Docker-specific files
-if grep -q docker /proc/1/cgroup 2>/dev/null; then
+if [ -f /.dockerenv ]; then
     echo "build_android.sh: Running inside Docker container..."
 else
     echo
@@ -33,16 +33,13 @@ fi
 
 # Detect the host system and set the correct NDK prebuilt path
 HOST_OS=$(uname)
-if [ "$HOST_OS" = "Darwin" ]; then
-  PREBUILT_DIR="darwin-x86_64"
-elif [ "$HOST_OS" = "Linux" ]; then
-  PREBUILT_DIR="linux-x86_64"
+if [ "$HOST_OS" = "Linux" ]; then
+    PREBUILT_DIR="linux-x86_64"
 else
-  echo "build_android.sh: Unsupported host system: $HOST_OS"
-  exit 1
+    echo "build_android.sh: ERROR: Unsupported host system: $HOST_OS"
+    echo "build_android.sh: Needs linux-x86_64 for adecuate android cross-compile toolset."
+    exit 1
 fi
-
-set -x
 
 build_rust_for_android() {
     pushd $1
@@ -115,53 +112,35 @@ build_rust_for_android ${ILXD_HOME}/crypto/rust i686-linux-android
 build_rust_for_android ${ILXD_HOME}/zk/rust x86_64-linux-android
 build_rust_for_android ${ILXD_HOME}/crypto/rust x86_64-linux-android
 
-# Get correct NDK toolchain path (for macOS)
 NDK_TOOLCHAIN_PATH=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/${PREBUILT_DIR}/bin
 
 # Compile individual bridges for Android using the NDK
 
 pushd android
+ARCHS=("arm64" "armv7" "x86" "x86_64")
+for ARCH in "${ARCHS[@]}"; do
+    if [ "$ARCH" = "arm64" ]; then
+        TARGET_ARCH="aarch64-linux-android21"
+        RUST_TARGET="aarch64-linux-android"
+    elif [ "$ARCH" = "armv7" ]; then
+        TARGET_ARCH="armv7a-linux-androideabi21"
+        RUST_TARGET="armv7-linux-androideabi"
+    elif [ "$ARCH" = "x86" ]; then
+        TARGET_ARCH="i686-linux-android21"
+        RUST_TARGET="i686-linux-android"
+    elif [ "$ARCH" = "x86_64" ]; then
+        TARGET_ARCH="x86_64-linux-android21"
+        RUST_TARGET="x86_64-linux-android"
+    fi
 
-# ARM64 architecture for ilxd_zk_bridge
-$NDK_TOOLCHAIN_PATH/aarch64-linux-android21-clang++ -shared -o libilxd_zk_bridge_arm64.so -fPIC ilxd_zk_bridge.cpp \
-    ${ILXD_HOME}/zk/rust/target/aarch64-linux-android/release/libillium_zk.a \
-    -lc++
+    $NDK_TOOLCHAIN_PATH/${TARGET_ARCH}-clang++ -shared -o libilxd_zk_bridge_${ARCH}.so -fPIC ilxd_zk_bridge.cpp \
+        ${ILXD_HOME}/zk/rust/target/${RUST_TARGET}/release/libillium_zk.a \
+        -lc++
 
-# ARM64 architecture for ilxd_crypto_bridge
-$NDK_TOOLCHAIN_PATH/aarch64-linux-android21-clang++ -shared -o libilxd_crypto_bridge_arm64.so -fPIC ilxd_crypto_bridge.cpp \
-    ${ILXD_HOME}/crypto/rust/target/aarch64-linux-android/release/libillium_crypto.a \
-    -lc++
-
-# ARMv7 architecture for ilxd_zk_bridge
-$NDK_TOOLCHAIN_PATH/armv7a-linux-androideabi21-clang++ -shared -o libilxd_zk_bridge_armv7.so -fPIC ilxd_zk_bridge.cpp \
-    ${ILXD_HOME}/zk/rust/target/armv7-linux-androideabi/release/libillium_zk.a \
-    -lc++
-
-# ARMv7 architecture for ilxd_crypto_bridge
-$NDK_TOOLCHAIN_PATH/armv7a-linux-androideabi21-clang++ -shared -o libilxd_crypto_bridge_armv7.so -fPIC ilxd_crypto_bridge.cpp \
-    ${ILXD_HOME}/crypto/rust/target/armv7-linux-androideabi/release/libillium_crypto.a \
-    -lc++
-
-# x86 architecture for ilxd_zk_bridge
-$NDK_TOOLCHAIN_PATH/i686-linux-android21-clang++ -shared -o libilxd_zk_bridge_x86.so -fPIC ilxd_zk_bridge.cpp \
-    ${ILXD_HOME}/zk/rust/target/i686-linux-android/release/libillium_zk.a \
-    -lc++
-
-# x86 architecture for ilxd_crypto_bridge
-$NDK_TOOLCHAIN_PATH/i686-linux-android21-clang++ -shared -o libilxd_crypto_bridge_x86.so -fPIC ilxd_crypto_bridge.cpp \
-    ${ILXD_HOME}/crypto/rust/target/i686-linux-android/release/libillium_crypto.a \
-    -lc++
-
-# x86_64 architecture for ilxd_zk_bridge
-$NDK_TOOLCHAIN_PATH/x86_64-linux-android21-clang++ -shared -o libilxd_zk_bridge_x86_64.so -fPIC ilxd_zk_bridge.cpp \
-    ${ILXD_HOME}/zk/rust/target/x86_64-linux-android/release/libillium_zk.a \
-    -lc++
-
-# x86_64 architecture for ilxd_crypto_bridge
-$NDK_TOOLCHAIN_PATH/x86_64-linux-android21-clang++ -shared -o libilxd_crypto_bridge_x86_64.so -fPIC ilxd_crypto_bridge.cpp \
-    ${ILXD_HOME}/crypto/rust/target/x86_64-linux-android/release/libillium_crypto.a \
-    -lc++
-
+    $NDK_TOOLCHAIN_PATH/${TARGET_ARCH}-clang++ -shared -o libilxd_crypto_bridge_${ARCH}.so -fPIC ilxd_crypto_bridge.cpp \
+        ${ILXD_HOME}/crypto/rust/target/${RUST_TARGET}/release/libillium_crypto.a \
+        -lc++
+done
 popd
 
 # Verify the shared libraries for all architectures
@@ -187,4 +166,3 @@ fi
 
 echo "ilxd_bridge/android:"
 ls -l android/*
-set +x
