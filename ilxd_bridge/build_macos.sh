@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Set the Rust target based on the detected architecture
-$OS=$(uname -s)
+OS=$(uname -s)
 ARCH=$(uname -m)
 # Check if the script is running on macOS
 if [ "$OS" != "Darwin" ]; then
