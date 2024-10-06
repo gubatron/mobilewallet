@@ -1,4 +1,22 @@
 #!/usr/bin/env bash
+# Set the Rust target based on the detected architecture
+$OS=$(uname -s)
+ARCH=$(uname -m)
+# Check if the script is running on macOS
+if [ "$OS" != "Darwin" ]; then
+    echo "This script must be run on macOS. Aborting."
+    exit 1
+fi
+
+if [ "$ARCH" = "x86_64" ]; then
+    RUST_TARGET_ARCH="x86_64-apple-darwin"
+elif [ "$ARCH" = "arm64" ] || [ "$ARCH" = "aarch64" ]; then
+    RUST_TARGET_ARCH="aarch64-apple-darwin"
+else
+    echo "Unsupported architecture: $ARCH"
+    exit 1
+fi
+
 # if ILXD_HOME is not set, exit with an error
 if [ -z "$ILXD_HOME" ]; then
   echo "ILXD_HOME path not found"
@@ -42,8 +60,6 @@ rm -fr libillium_zk_objs
 rm -fr libillium_crypto_objs
 OS_NAME=macos
 MAC_OS_VERSION_MIN=10.13
-RUST_TARGET_ARCH=aarch64-apple-darwin
-ARCH=arm64
 # Set the path to the Xcode Developer directory
 XCODE_DEV_DIR=$(xcode-select --print-path)
 # Set the path to the macOS SDK
@@ -107,12 +123,10 @@ popd
 
 if [ ! -f "macos/libilxd_zk_bridge_${OS_NAME}_${ARCH}.dylib" ]; then
     echo "Error: libilxd_zk_bridge_${OS_NAME}_${ARCH}.dylib not found"
-    exit 1
 fi
 
 if [ ! -f "macos/libilxd_crypto_bridge_${OS_NAME}_${ARCH}.dylib" ]; then
     echo "Error: libilxd_crypto_bridge_${OS_NAME}_${ARCH}.dylib not found"
-    exit 1
 fi
 
 echo "ilxd_bridge/macos:"
@@ -121,5 +135,9 @@ echo ""
 
 # Now build the dart component
 dart pub get
+
+echo "Testing ilxd_crypto_bridge..."
 dart run test/test_ilxd_crypto_bridge.dart
+
+echo "Testing ilxd_zk_bridge..."
 dart run test/test_ilxd_zk_bridge.dart
