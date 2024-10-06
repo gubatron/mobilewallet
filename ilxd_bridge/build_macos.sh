@@ -121,5 +121,5 @@ echo ""
 
 # Now build the dart component
 dart pub get
-dart run test/test_macos.dart
-
+dart run test/test_ilxd_crypto_bridge.dart
+dart run test/test_ilxd_zk_bridge.dart
