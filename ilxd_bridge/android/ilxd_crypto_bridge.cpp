@@ -1,7 +1,7 @@
 // Copyright (c) 2024 Project Illium
 // This work is licensed under the terms of the MIT License
 // For a copy, see <https://github.com/project-illium/mobilewallet/blob/main/LICENSE>
-
+#include <cstdint> 
 // Declare the Rust functions that are defined in the Rust library
 extern "C" {
     void generate_secret_key(uint8_t* out);

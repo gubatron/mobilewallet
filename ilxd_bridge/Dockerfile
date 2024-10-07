@@ -28,6 +28,7 @@ RUN apt-get install -y wget
 RUN apt-get install -y libgl1-mesa-dev
 RUN apt-get install -y clang gcc
 RUN apt-get install -y gcc-multilib g++-multilib
+RUN apt-get install -y emacs-nox
 
 RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
 
@@ -49,15 +50,21 @@ RUN wget https://storage.googleapis.com/dart-archive/channels/stable/release/lat
 RUN unzip dartsdk-linux-x64-release.zip -d /usr/lib
 ENV PATH="$PATH:/usr/lib/dart/bin"
 
+RUN mkdir -p /workspace
 ENV ILXD_HOME=/workspace/ilxd
+
 
 # Install Android NDK r27b
 RUN wget https://dl.google.com/android/repository/android-ndk-r27b-linux.zip -O android-ndk-r27b.zip
-RUN mkdir -p /workspace
 RUN unzip android-ndk-r27b.zip -d /workspace
 RUN ln -s /workspace/android-ndk-r27b /workspace/android-ndk
 ENV ANDROID_NDK_HOME=/workspace/android-ndk
 ENV PATH="$PATH:${ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/linux-x86_64/bin"
+
+# git clone ilxd to /workspace/ilxd
+# RUN git clone https://github.com/project-illium/ilxd.git /workspace/ilxd
+# Clone the specific branch from the ilxd repository that has some dependency upgrades to /workspace/ilxd
+RUN git clone --branch dep-fix-blst-0.3.13 https://github.com/gubatron/ilxd.git /workspace/ilxd
 
 WORKDIR /workspace/mobilewallet/ilxd_bridge
 

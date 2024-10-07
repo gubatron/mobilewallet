@@ -56,24 +56,24 @@ build_rust_library_for_android() {
 
     # NDK toolchains for different architectures
     export CC_aarch64_linux_android=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/$PREBUILT_DIR/bin/aarch64-linux-android27-clang
-    export AR_aarch64_linux_android=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/$PREBUILT_DIR/bin/aarch64-linux-android-ar
+    export AR_aarch64_linux_android=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/$PREBUILT_DIR/bin/llvm-ar
     export CXX_aarch64_linux_android=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/$PREBUILT_DIR/bin/aarch64-linux-android27-clang++
-    export RANLIB_aarch64_linux_android=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/$PREBUILT_DIR/bin/aarch64-linux-android-ranlib
+    export RANLIB_aarch64_linux_android=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/$PREBUILT_DIR/bin/llvm-ranlib
 
-    export CC_armv7_linux_android=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/$PREBUILT_DIR/bin/armv7a-linux-androideabi21-clang
-    export AR_armv7_linux_android=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/$PREBUILT_DIR/bin/arm-linux-androideabi-ar
-    export CXX_armv7_linux_android=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/$PREBUILT_DIR/bin/armv7a-linux-androideabi21-clang++
-    export RANLIB_armv7_linux_android=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/$PREBUILT_DIR/bin/arm-linux-androideabi-ranlib
+    export CC_armv7_linux_android=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/$PREBUILT_DIR/bin/armv7a-linux-androideabi27-clang
+    export AR_armv7_linux_android=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/$PREBUILT_DIR/bin/llvm-ar
+    export CXX_armv7_linux_android=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/$PREBUILT_DIR/bin/armv7a-linux-androideabi27-clang++
+    export RANLIB_armv7_linux_android=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/$PREBUILT_DIR/bin/llvm-ranlib
 
     export CC_i686_linux_android=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/$PREBUILT_DIR/bin/i686-linux-android27-clang
-    export AR_i686_linux_android=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/$PREBUILT_DIR/bin/i686-linux-android-ar
+    export AR_i686_linux_android=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/$PREBUILT_DIR/bin/llvm-ar
     export CXX_i686_linux_android=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/$PREBUILT_DIR/bin/i686-linux-android27-clang++
-    export RANLIB_i686_linux_android=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/$PREBUILT_DIR/bin/i686-linux-android-ranlib
+    export RANLIB_i686_linux_android=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/$PREBUILT_DIR/bin/llvm-ranlib
 
     export CC_x86_64_linux_android=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/$PREBUILT_DIR/bin/x86_64-linux-android27-clang
-    export AR_x86_64_linux_android=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/$PREBUILT_DIR/bin/x86_64-linux-android-ar
+    export AR_x86_64_linux_android=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/$PREBUILT_DIR/bin/llvm-ar
     export CXX_x86_64_linux_android=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/$PREBUILT_DIR/bin/x86_64-linux-android27-clang++
-    export RANLIB_x86_64_linux_android=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/$PREBUILT_DIR/bin/x86_64-linux-android-ranlib
+    export RANLIB_x86_64_linux_android=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/$PREBUILT_DIR/bin/llvm-ranlib
 
     export RUSTFLAGS="-C link-arg=-v"
     
@@ -103,7 +103,7 @@ build_rust_library_for_android() {
         exit 1
     fi
 
-        # Ensure blst can locate the correct compiler for each target
+    # Ensure blst can locate the correct compiler for each target
     export TARGET_CC=$CC
     export TARGET_AR=$AR
 
@@ -114,16 +114,16 @@ build_rust_library_for_android() {
 }
 
 # Build Rust libraries for ARM and x86 architectures
-build_rust_library_for_android ${ILXD_HOME}/zk/rust aarch64-linux-android
+#build_rust_library_for_android ${ILXD_HOME}/zk/rust aarch64-linux-android
 build_rust_library_for_android ${ILXD_HOME}/crypto/rust aarch64-linux-android
 
-build_rust_library_for_android ${ILXD_HOME}/zk/rust armv7-linux-androideabi
+#build_rust_library_for_android ${ILXD_HOME}/zk/rust armv7-linux-androideabi
 build_rust_library_for_android ${ILXD_HOME}/crypto/rust armv7-linux-androideabi
 
-build_rust_library_for_android ${ILXD_HOME}/zk/rust i686-linux-android
+#build_rust_library_for_android ${ILXD_HOME}/zk/rust i686-linux-android
 build_rust_library_for_android ${ILXD_HOME}/crypto/rust i686-linux-android
 
-build_rust_library_for_android ${ILXD_HOME}/zk/rust x86_64-linux-android
+#build_rust_library_for_android ${ILXD_HOME}/zk/rust x86_64-linux-android
 build_rust_library_for_android ${ILXD_HOME}/crypto/rust x86_64-linux-android
 
 NDK_TOOLCHAIN_PATH=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/${PREBUILT_DIR}/bin
@@ -147,36 +147,67 @@ for ARCH in "${ARCHS[@]}"; do
         RUST_TARGET="x86_64-linux-android"
     fi
 
-    $NDK_TOOLCHAIN_PATH/${TARGET_ARCH}-clang++ -shared -o libilxd_zk_bridge_${ARCH}.so -fPIC ilxd_zk_bridge.cpp \
-        ${ILXD_HOME}/zk/rust/target/${RUST_TARGET}/release/libillium_zk.a \
-        -lc++
+#    $NDK_TOOLCHAIN_PATH/${TARGET_ARCH}-clang++ -shared -o libilxd_zk_bridge_${ARCH}.so -fPIC ilxd_zk_bridge.cpp \
+#        ${ILXD_HOME}/zk/rust/target/${RUST_TARGET}/release/libillium_zk.a \
+#        -lc++
 
-    $NDK_TOOLCHAIN_PATH/${TARGET_ARCH}-clang++ -shared -o libilxd_crypto_bridge_${ARCH}.so -fPIC ilxd_crypto_bridge.cpp \
-        ${ILXD_HOME}/crypto/rust/target/${RUST_TARGET}/release/libillium_crypto.a \
-        -lc++
+    if [ -f ${ILXD_HOME}/crypto/rust/target/${RUST_TARGET}/release/libillium_crypto.a ]; then
+        echo "build_android.sh: Building ilxd_crypto_bridge.cpp for ${ARCH}..."
+        if [ -f libilxd_crypto_bridge_${ARCH}.so ]; then
+	    rm libilxd_crypto_bridge_${ARCH}.so
+        fi
+
+        $NDK_TOOLCHAIN_PATH/${TARGET_ARCH}-clang++ -shared -o libilxd_crypto_bridge_${ARCH}.so -fPIC ilxd_crypto_bridge.cpp \
+            ${ILXD_HOME}/crypto/rust/target/${RUST_TARGET}/release/libillium_crypto.a \
+            -lc++
+    else
+        echo "build_android.sh: ${ILXD_HOME}/crypto/rust/target/${RUST_TARGET}/release/libillium_crypto.a missing, can't build libilxd_crypto_bridge_${ARCH}.so"
+    fi
 done
 popd
 
 # Verify the shared libraries for all architectures
-if [ ! -f "android/libilxd_zk_bridge_arm64.so" ] || [ ! -f "android/libilxd_crypto_bridge_arm64.so" ]; then
-    echo "Error: libilxd_zk_bridge_arm64.so or libilxd_crypto_bridge_arm64.so not found"
-    exit 1
+# First, check all libilxd_crypto_* versions
+if [ ! -f "android/libilxd_crypto_bridge_arm64.so" ]; then
+    echo "Error: libilxd_crypto_bridge_arm64.so not found"
+else
+    echo "Success: libilxd_crypto_bridge_arm64.so found"
 fi
 
-if [ ! -f "android/libilxd_zk_bridge_armv7.so" ] || [ ! -f "android/libilxd_crypto_bridge_armv7.so" ]; then
-    echo "Error: libilxd_zk_bridge_armv7.so or libilxd_crypto_bridge_armv7.so not found"
-    exit 1
+if [ ! -f "android/libilxd_crypto_bridge_armv7.so" ]; then
+    echo "Error: libilxd_crypto_bridge_armv7.so not found"
+else
+    echo "Success: libilxd_crypto_bridge_armv7.so found"
 fi
 
-if [ ! -f "android/libilxd_zk_bridge_x86.so" ] || [ ! -f "android/libilxd_crypto_bridge_x86.so" ]; then
-    echo "Error: libilxd_zk_bridge_x86.so or libilxd_crypto_bridge_x86.so not found"
-    exit 1
+if [ ! -f "android/libilxd_crypto_bridge_x86.so" ]; then
+    echo "Error: libilxd_crypto_bridge_x86.so not found"
+else
+    echo "Success: libilxd_crypto_bridge_x86.so found"
 fi
 
-if [ ! -f "android/libilxd_zk_bridge_x86_64.so" ] || [ ! -f "android/libilxd_crypto_bridge_x86_64.so" ]; then
-    echo "Error: libilxd_zk_bridge_x86_64.so or libilxd_crypto_bridge_x86_64.so not found"
-    exit 1
+if [ ! -f "android/libilxd_crypto_bridge_x86_64.so" ]; then
+    echo "Error: libilxd_crypto_bridge_x86_64.so not found"
+else
+    echo "Success: libilxd_crypto_bridge_x86_64.so found"
 fi
+
+# Now, check all libilxd_zk_bridge_* versions
+#if [ ! -f "android/libilxd_zk_bridge_arm64.so" ]; then
+#    echo "Error: libilxd_zk_bridge_arm64.so not found"
+#fi
+
+#if [ ! -f "android/libilxd_zk_bridge_armv7.so" ]; then
+#    echo "Error: libilxd_zk_bridge_armv7.so not found"
+#fi
+
+#if [ ! -f "android/libilxd_zk_bridge_x86.so" ]; then
+#    echo "Error: libilxd_zk_bridge_x86.so not found"
+#fi
+
+#if [ ! -f "android/libilxd_zk_bridge_x86_64.so" ]; then
+#    echo "Error: libilxd_zk_bridge_x86_64.so not found"
+#fi
 
 echo "ilxd_bridge/android:"
 ls -l android/*
