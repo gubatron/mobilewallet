@@ -10,25 +10,57 @@ import 'package:ffi/ffi.dart';
 class IlxdCryptoBridge {
   static const KeyLen = 32;
 
-  static final DynamicLibrary _dylib = DynamicLibrary.open(IlxdCommon.getLibPath(Library.CRYPTO));
+  static DynamicLibrary? _dylib;
 
-  // void generate_secret_key(uint8_t* out);
-  static final _generateSecretKey = _dylib.lookupFunction<Void Function(Pointer<Uint8>), void Function(Pointer<Uint8>)>('generate_secret_key');
+  // Method to get the DynamicLibrary, ensures lazy initialization
+  static DynamicLibrary getDyLib() {
+      final libPath = IlxdCommon.getLibPath(Library.CRYPTO);
+      print('Loading dynamic library from path: $libPath');
+      if (libPath.isEmpty) {
+         throw Exception('Dynamic library path is empty. Cannot load the library.');
+      }
+      if (_dylib == null) {
+          _dylib = DynamicLibrary.open(libPath);
+      }
+      return _dylib!;
+  }
 
-  // void secret_key_from_seed(const uint8_t* seed, uint8_t* out);
-  static final _secretKeyFromSeed = _dylib.lookupFunction<Void Function(Pointer<Uint8>, Pointer<Uint8>), void Function(Pointer<Uint8>, Pointer<Uint8>)>('secret_key_from_seed');
+    
+  // generate_secret_key function lookup happens inside the method
+  static void _generateSecretKey(Pointer<Uint8> out) {
+    final generateSecretKey = getDyLib().lookupFunction<Void Function(Pointer<Uint8>), void Function(Pointer<Uint8>)>('generate_secret_key');
+    generateSecretKey(out);
+  }
 
-  // void priv_to_pub(const uint8_t* bytes, uint8_t* out);
-  static final _privToPub = _dylib.lookupFunction<Void Function(Pointer<Uint8>, Pointer<Uint8>), void Function(Pointer<Uint8>, Pointer<Uint8>)>('priv_to_pub');
+  // secret_key_from_seed function lookup happens inside the method
+  static void _secretKeyFromSeed(Pointer<Uint8> seed, Pointer<Uint8> out) {
+    final secretKeyFromSeed = getDyLib().lookupFunction<Void Function(Pointer<Uint8>, Pointer<Uint8>), void Function(Pointer<Uint8>, Pointer<Uint8>)>('secret_key_from_seed');
+    secretKeyFromSeed(seed, out);
+  }
 
-  // void compressed_to_full(const uint8_t* bytes, uint8_t* out_x, uint8_t* out_y);
-  static final _compressedToFull = _dylib.lookupFunction<Void Function(Pointer<Uint8>, Pointer<Uint8>, Pointer<Uint8>), void Function(Pointer<Uint8>, Pointer<Uint8>, Pointer<Uint8>)>('compressed_to_full');
+  // priv_to_pub function lookup happens inside the method
+  static void _privToPub(Pointer<Uint8> privKey, Pointer<Uint8> out) {
+    final privToPub = getDyLib().lookupFunction<Void Function(Pointer<Uint8>, Pointer<Uint8>), void Function(Pointer<Uint8>, Pointer<Uint8>)>('priv_to_pub');
+    privToPub(privKey, out);
+  }
 
-  // void sign(const uint8_t* privkey, const uint8_t* message_digest, uint8_t* out);
-  static final _sign = _dylib.lookupFunction<Void Function(Pointer<Uint8>, Pointer<Uint8>, Pointer<Uint8>), void Function(Pointer<Uint8>, Pointer<Uint8>, Pointer<Uint8>)>('sign');
+  // compressed_to_full function lookup happens inside the method
+  static void _compressedToFull(Pointer<Uint8> compressed, Pointer<Uint8> outX, Pointer<Uint8> outY) {
+    final compressedToFull = getDyLib().lookupFunction<Void Function(Pointer<Uint8>, Pointer<Uint8>, Pointer<Uint8>), void Function(Pointer<Uint8>, Pointer<Uint8>, Pointer<Uint8>)>('compressed_to_full');
+    compressedToFull(compressed, outX, outY);
+  }
 
-  // bool verify(const uint8_t* pub_bytes, const uint8_t* digest_bytes, const uint8_t* sig_r, const uint8_t* sig_s);
-  static final _verify = _dylib.lookupFunction<Bool Function(Pointer<Uint8>, Pointer<Uint8>, Pointer<Uint8>, Pointer<Uint8>), bool Function(Pointer<Uint8>, Pointer<Uint8>, Pointer<Uint8>, Pointer<Uint8>)>('verify');
+  // sign function lookup happens inside the method
+  static void _sign(Pointer<Uint8> privKey, Pointer<Uint8> messageDigest, Pointer<Uint8> out) {
+    final sign = getDyLib().lookupFunction<Void Function(Pointer<Uint8>, Pointer<Uint8>, Pointer<Uint8>), void Function(Pointer<Uint8>, Pointer<Uint8>, Pointer<Uint8>)>('sign');
+    sign(privKey, messageDigest, out);
+  }
+
+  // verify function lookup happens inside the method
+  static bool _verify(Pointer<Uint8> pubBytes, Pointer<Uint8> digestBytes, Pointer<Uint8> sigR, Pointer<Uint8> sigS) {
+    final verify = getDyLib().lookupFunction<Bool Function(Pointer<Uint8>, Pointer<Uint8>, Pointer<Uint8>, Pointer<Uint8>), bool Function(Pointer<Uint8>, Pointer<Uint8>, Pointer<Uint8>, Pointer<Uint8>)>('verify');
+    return verify(pubBytes, digestBytes, sigR, sigS);
+  }
 
   static Uint8List generateSecretKey() {
     final outputBuffer = malloc.allocate<Uint8>(KeyLen);

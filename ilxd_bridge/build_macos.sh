@@ -41,11 +41,9 @@ rm_if_exists() {
 
 build_rust_crate_archive() {
     pushd $1
-    RUST_TARGET_ARCH=$2
     echo ${PWD}
-    rustup target add ${RUST_TARGET_ARCH}
     export MACOSX_DEPLOYMENT_TARGET=10.13
-    cargo build --target ${RUST_TARGET_ARCH} --release
+    cargo build -r
     popd
 }
 
@@ -69,13 +67,13 @@ rm_if_exists "${ILXD_HOME}/zk/rust/target/${RUST_TARGET_ARCH}/release/libillium_
 rm_if_exists "${ILXD_HOME}/crypto/rust/target/${RUST_TARGET_ARCH}/release/libillium_crypto.a"
 
 # Build libillium_zk.a
-build_rust_crate_archive ${ILXD_HOME}/zk/rust ${RUST_TARGET_ARCH}
+build_rust_crate_archive ${ILXD_HOME}/zk/rust
 # Build libillium_crypto.a
-build_rust_crate_archive ${ILXD_HOME}/crypto/rust ${RUST_TARGET_ARCH}
+build_rust_crate_archive ${ILXD_HOME}/crypto/rust
 
 # Copy libillium_zk.a and libillium_crypto.a into our bridge's macos/ folder
-cp ${ILXD_HOME}/zk/rust/target/${RUST_TARGET_ARCH}/release/libillium_zk.a .
-cp ${ILXD_HOME}/crypto/rust/target/${RUST_TARGET_ARCH}/release/libillium_crypto.a .
+cp ${ILXD_HOME}/zk/rust/target/release/libillium_zk.a .
+cp ${ILXD_HOME}/crypto/rust/target/release/libillium_crypto.a .
 
 # Compile the Objective-C code
 clang -c ilxd_zk_bridge.m -o "ilxd_zk_bridge_${OS_NAME}_${ARCH}.o" \
@@ -95,7 +93,7 @@ clang -c ilxd_crypto_bridge.m -o "ilxd_crypto_bridge_${OS_NAME}_${ARCH}.o" \
 # Create the shared libraries
 clang -dynamiclib -o "libilxd_zk_bridge_${OS_NAME}_${ARCH}.dylib" \
     "ilxd_zk_bridge_${OS_NAME}_${ARCH}.o" \
-    ${ILXD_HOME}/zk/rust/target/aarch64-apple-darwin/release/libillium_zk.a \
+    ${ILXD_HOME}/zk/rust/target/${RUST_TARGET_ARCH}/release/libillium_zk.a \
     -arch ${ARCH} \
     -isysroot "${MACOS_SDK_PATH}" \
     -fobjc-arc \
@@ -108,7 +106,7 @@ clang -dynamiclib -o "libilxd_zk_bridge_${OS_NAME}_${ARCH}.dylib" \
 
 clang -dynamiclib -o "libilxd_crypto_bridge_${OS_NAME}_${ARCH}.dylib" \
     "ilxd_crypto_bridge_${OS_NAME}_${ARCH}.o" \
-    ${ILXD_HOME}/crypto/rust/target/aarch64-apple-darwin/release/libillium_crypto.a \
+    ${ILXD_HOME}/crypto/rust/target/${RUST_TARGET_ARCH}/release/libillium_crypto.a \
     -arch ${ARCH} \
     -isysroot "${MACOS_SDK_PATH}" \
     -fobjc-arc \

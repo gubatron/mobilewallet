@@ -7,11 +7,12 @@ enum Library {
 
 class IlxdCommon {
   static String getLibPath(Library lib) {
-    String cwd = Directory.current.path.toString();
+    String cwd = Directory.current.path;
     String osName = '';
     String arch = '';
     String libExt = 'so';
 
+    // Detect OS
     if (Platform.isMacOS) {
       osName = 'macos';
     } else if (Platform.isIOS) {
@@ -26,14 +27,26 @@ class IlxdCommon {
       throw UnsupportedError('IlxdCommon::getLibPath(): Unsupported OS: ${Platform.operatingSystem}');
     }
 
+    // Print Platform version
+    print('Platform.version: ${Platform.version}');
+
+    // Detect Architecture
     if (Platform.version.contains('arm64') || Platform.version.contains('aarch64')) {
       arch = 'arm64';
-    } else if (Platform.version.contains('x86_64')) {
+    } else if (Platform.version.contains('x86_64') || Platform.version.contains('x64')) {
       arch = 'x86_64';
     } else if (Platform.version.contains('x86')) {
       arch = 'x86';
+    } else {
+      // For debugging, print that architecture was not found
+      print('Unable to detect architecture from Platform.version');
     }
 
+    // Print detected values
+    print('Detected OS: $osName');
+    print('Detected Arch: $arch');
+
+    // Set library extension
     if (Platform.isMacOS || Platform.isIOS) {
       libExt = 'dylib';
     } else if (Platform.isWindows) {
@@ -41,6 +54,7 @@ class IlxdCommon {
     }
 
     if (osName.isEmpty || arch.isEmpty || libExt.isEmpty) {
+      print('One of the required parameters is empty: osName=$osName, arch=$arch, libExt=$libExt');
       return '';
     }
 
@@ -50,6 +64,7 @@ class IlxdCommon {
     }
 
     String result = '${cwd}/${osName}/libilxd_${libInfix}_bridge_${osName}_${arch}.${libExt}';
+    print("IlxdCommon::getLibPath() -> $result");
     return result;
   }
 }
