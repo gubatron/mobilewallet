@@ -26,6 +26,9 @@ RUN apt-get install -y python3
 RUN apt-get install -y openjdk-8-jdk
 RUN apt-get install -y wget
 RUN apt-get install -y libgl1-mesa-dev
+RUN apt-get install -y clang gcc
+RUN apt-get install -y gcc-multilib g++-multilib
+
 RUN curl https://sh.rustup.rs -sSf | sh -s -- -y
 
 # Add Rust to PATH
@@ -59,7 +62,7 @@ ENV PATH="$PATH:${ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/linux-x86_64/bin"
 WORKDIR /workspace/mobilewallet/ilxd_bridge
 
 # Set the entry point
-# CMD ["bash"]
+CMD ["bash"]
 
 # Set build_android.sh as the entrypoint
-ENTRYPOINT ["./build_android.sh"]
+#ENTRYPOINT ["./build_android.sh"]

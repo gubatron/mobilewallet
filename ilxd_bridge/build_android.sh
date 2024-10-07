@@ -41,12 +41,23 @@ else
     exit 1
 fi
 
-build_rust_for_android() {
+build_rust_library_for_android() {
     pushd $1
-    RUST_TARGET_ARCH=$2
-    export CC_aarch64_linux_android=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/$PREBUILT_DIR/bin/aarch64-linux-android21-clang
+    export RUST_TARGET_ARCH=$2
+
+    # Set appropriate toolchain paths for Android architectures
+    if [[ "$RUST_TARGET_ARCH" == "i686-linux-android" || "$RUST_TARGET_ARCH" == "armv7-linux-androideabi" ]]; then
+        export CFLAGS="-m32 --target=$RUST_TARGET_ARCH"
+        export LDFLAGS="-m32"
+    else
+        export CFLAGS="--target=$RUST_TARGET_ARCH"
+        export LDFLAGS=""
+    fi
+
+    # NDK toolchains for different architectures
+    export CC_aarch64_linux_android=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/$PREBUILT_DIR/bin/aarch64-linux-android27-clang
     export AR_aarch64_linux_android=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/$PREBUILT_DIR/bin/aarch64-linux-android-ar
-    export CXX_aarch64_linux_android=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/$PREBUILT_DIR/bin/aarch64-linux-android21-clang++
+    export CXX_aarch64_linux_android=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/$PREBUILT_DIR/bin/aarch64-linux-android27-clang++
     export RANLIB_aarch64_linux_android=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/$PREBUILT_DIR/bin/aarch64-linux-android-ranlib
 
     export CC_armv7_linux_android=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/$PREBUILT_DIR/bin/armv7a-linux-androideabi21-clang
@@ -54,16 +65,18 @@ build_rust_for_android() {
     export CXX_armv7_linux_android=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/$PREBUILT_DIR/bin/armv7a-linux-androideabi21-clang++
     export RANLIB_armv7_linux_android=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/$PREBUILT_DIR/bin/arm-linux-androideabi-ranlib
 
-    export CC_i686_linux_android=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/$PREBUILT_DIR/bin/i686-linux-android21-clang
+    export CC_i686_linux_android=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/$PREBUILT_DIR/bin/i686-linux-android27-clang
     export AR_i686_linux_android=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/$PREBUILT_DIR/bin/i686-linux-android-ar
-    export CXX_i686_linux_android=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/$PREBUILT_DIR/bin/i686-linux-android21-clang++
+    export CXX_i686_linux_android=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/$PREBUILT_DIR/bin/i686-linux-android27-clang++
     export RANLIB_i686_linux_android=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/$PREBUILT_DIR/bin/i686-linux-android-ranlib
 
-    export CC_x86_64_linux_android=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/$PREBUILT_DIR/bin/x86_64-linux-android21-clang
+    export CC_x86_64_linux_android=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/$PREBUILT_DIR/bin/x86_64-linux-android27-clang
     export AR_x86_64_linux_android=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/$PREBUILT_DIR/bin/x86_64-linux-android-ar
-    export CXX_x86_64_linux_android=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/$PREBUILT_DIR/bin/x86_64-linux-android21-clang++
+    export CXX_x86_64_linux_android=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/$PREBUILT_DIR/bin/x86_64-linux-android27-clang++
     export RANLIB_x86_64_linux_android=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/$PREBUILT_DIR/bin/x86_64-linux-android-ranlib
 
+    export RUSTFLAGS="-C link-arg=-v"
+    
     # Set the correct CC, AR, CXX, and RANLIB based on the target
     if [ "$RUST_TARGET_ARCH" = "aarch64-linux-android" ]; then
         export CC=$CC_aarch64_linux_android
@@ -90,8 +103,9 @@ build_rust_for_android() {
         exit 1
     fi
 
-    # Set appropriate CFLAGS
-    export CFLAGS="--target=$RUST_TARGET_ARCH"
+        # Ensure blst can locate the correct compiler for each target
+    export TARGET_CC=$CC
+    export TARGET_AR=$AR
 
     # Compile Rust code
     rustup target add ${RUST_TARGET_ARCH}
@@ -100,17 +114,17 @@ build_rust_for_android() {
 }
 
 # Build Rust libraries for ARM and x86 architectures
-build_rust_for_android ${ILXD_HOME}/zk/rust aarch64-linux-android
-build_rust_for_android ${ILXD_HOME}/crypto/rust aarch64-linux-android
+build_rust_library_for_android ${ILXD_HOME}/zk/rust aarch64-linux-android
+build_rust_library_for_android ${ILXD_HOME}/crypto/rust aarch64-linux-android
 
-build_rust_for_android ${ILXD_HOME}/zk/rust armv7-linux-androideabi
-build_rust_for_android ${ILXD_HOME}/crypto/rust armv7-linux-androideabi
+build_rust_library_for_android ${ILXD_HOME}/zk/rust armv7-linux-androideabi
+build_rust_library_for_android ${ILXD_HOME}/crypto/rust armv7-linux-androideabi
 
-build_rust_for_android ${ILXD_HOME}/zk/rust i686-linux-android
-build_rust_for_android ${ILXD_HOME}/crypto/rust i686-linux-android
+build_rust_library_for_android ${ILXD_HOME}/zk/rust i686-linux-android
+build_rust_library_for_android ${ILXD_HOME}/crypto/rust i686-linux-android
 
-build_rust_for_android ${ILXD_HOME}/zk/rust x86_64-linux-android
-build_rust_for_android ${ILXD_HOME}/crypto/rust x86_64-linux-android
+build_rust_library_for_android ${ILXD_HOME}/zk/rust x86_64-linux-android
+build_rust_library_for_android ${ILXD_HOME}/crypto/rust x86_64-linux-android
 
 NDK_TOOLCHAIN_PATH=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/${PREBUILT_DIR}/bin
 
@@ -120,16 +134,16 @@ pushd android
 ARCHS=("arm64" "armv7" "x86" "x86_64")
 for ARCH in "${ARCHS[@]}"; do
     if [ "$ARCH" = "arm64" ]; then
-        TARGET_ARCH="aarch64-linux-android21"
+        TARGET_ARCH="aarch64-linux-android27"
         RUST_TARGET="aarch64-linux-android"
     elif [ "$ARCH" = "armv7" ]; then
         TARGET_ARCH="armv7a-linux-androideabi21"
         RUST_TARGET="armv7-linux-androideabi"
     elif [ "$ARCH" = "x86" ]; then
-        TARGET_ARCH="i686-linux-android21"
+        TARGET_ARCH="i686-linux-android27"
         RUST_TARGET="i686-linux-android"
     elif [ "$ARCH" = "x86_64" ]; then
-        TARGET_ARCH="x86_64-linux-android21"
+        TARGET_ARCH="x86_64-linux-android27"
         RUST_TARGET="x86_64-linux-android"
     fi
 
