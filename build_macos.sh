@@ -6,10 +6,6 @@
 # Build the ilxd_bridge
 pushd ilxd_bridge
 ./build_macos.sh
-#./build_ios.sh
-#./build_android.sh
-#./build_linux.sh
-#./build_windows.sh
 popd
 
 # Build the wallet

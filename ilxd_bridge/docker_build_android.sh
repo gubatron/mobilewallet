@@ -25,6 +25,6 @@ fi
 # Run the Docker container
 docker run --rm -it \
     -v ${PWD}:/workspace/mobilewallet/ilxd_bridge \
-    ilxd_bridge_android_builder #\
-#    /bin/bash -c "cd /workspace/mobilewallet/ilxd_bridge && ./build_android.sh"
+    ilxd_bridge_android_builder \
+    /bin/bash -c "cd /workspace/mobilewallet/ilxd_bridge && ./build_android.sh"
 
