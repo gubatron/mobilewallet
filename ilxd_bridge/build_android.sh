@@ -113,18 +113,60 @@ build_rust_library_for_android() {
     popd
 }
 
+# Function to build Dart bridges for each architecture
+build_dart_bridge() {
+    local LIB_NAME=$1   # Name of the library (crypto or zk)
+    local CPP_FILE=$2   # Name of the CPP file to compile (e.g., ilxd_crypto_bridge.cpp)
+    local LIB_FILE=$3   # Name of the Rust static library (e.g., libillium_crypto.a)
+    local ARCH=$4       # Target architecture (arm64, armv7, x86, x86_64)
+    local TARGET_ARCH=$5 # Android NDK target architecture (e.g., aarch64-linux-android27)
+    local RUST_TARGET=$6 # Rust target architecture (e.g., aarch64-linux-android)
+
+    if [ -f ${ILXD_HOME}/${LIB_NAME}/rust/target/${RUST_TARGET}/release/${LIB_FILE} ]; then
+        echo "build_android.sh: Building ${CPP_FILE} for ${ARCH}..."
+        if [ -f libilxd_${LIB_NAME}_bridge_${ARCH}.so ]; then
+            rm libilxd_${LIB_NAME}_bridge_${ARCH}.so
+        fi
+
+        $NDK_TOOLCHAIN_PATH/${TARGET_ARCH}-clang++ -shared -o libilxd_${LIB_NAME}_bridge_${ARCH}.so -fPIC ${CPP_FILE} \
+            ${ILXD_HOME}/${LIB_NAME}/rust/target/${RUST_TARGET}/release/${LIB_FILE} \
+            -lc++
+    else
+        echo "build_android.sh: ${ILXD_HOME}/${LIB_NAME}/rust/target/${RUST_TARGET}/release/${LIB_FILE} missing, can't build libilxd_${LIB_NAME}_bridge_${ARCH}.so"
+    fi
+}
+
+# Default flags
+BUILD_CRYPTO=true
+BUILD_ZK=true
+
+# Argument parsing
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        --zk-only) BUILD_CRYPTO=false; BUILD_ZK=true ;;
+        --crypto-only) BUILD_CRYPTO=true; BUILD_ZK=false ;;
+        *) echo "Unknown parameter passed: $1"; exit 1 ;;
+    esac
+    shift
+done
+
 # Build Rust libraries for ARM and x86 architectures
-#build_rust_library_for_android ${ILXD_HOME}/zk/rust aarch64-linux-android
-build_rust_library_for_android ${ILXD_HOME}/crypto/rust aarch64-linux-android
 
-#build_rust_library_for_android ${ILXD_HOME}/zk/rust armv7-linux-androideabi
-build_rust_library_for_android ${ILXD_HOME}/crypto/rust armv7-linux-androideabi
+# ilxd_crypto libraries
+if [ "$BUILD_CRYPTO" = true ]; then
+    build_rust_library_for_android ${ILXD_HOME}/crypto/rust aarch64-linux-android
+    build_rust_library_for_android ${ILXD_HOME}/crypto/rust armv7-linux-androideabi
+    build_rust_library_for_android ${ILXD_HOME}/crypto/rust i686-linux-android
+    build_rust_library_for_android ${ILXD_HOME}/crypto/rust x86_64-linux-android
+fi
 
-#build_rust_library_for_android ${ILXD_HOME}/zk/rust i686-linux-android
-build_rust_library_for_android ${ILXD_HOME}/crypto/rust i686-linux-android
-
-#build_rust_library_for_android ${ILXD_HOME}/zk/rust x86_64-linux-android
-build_rust_library_for_android ${ILXD_HOME}/crypto/rust x86_64-linux-android
+# ilxd_zk libraries
+if [ "$BUILD_ZK" = true ]; then
+    build_rust_library_for_android ${ILXD_HOME}/zk/rust aarch64-linux-android
+    build_rust_library_for_android ${ILXD_HOME}/zk/rust armv7-linux-androideabi
+    build_rust_library_for_android ${ILXD_HOME}/zk/rust i686-linux-android
+    build_rust_library_for_android ${ILXD_HOME}/zk/rust x86_64-linux-android
+fi
 
 NDK_TOOLCHAIN_PATH=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/${PREBUILT_DIR}/bin
 
@@ -147,67 +189,73 @@ for ARCH in "${ARCHS[@]}"; do
         RUST_TARGET="x86_64-linux-android"
     fi
 
-#    $NDK_TOOLCHAIN_PATH/${TARGET_ARCH}-clang++ -shared -o libilxd_zk_bridge_${ARCH}.so -fPIC ilxd_zk_bridge.cpp \
-#        ${ILXD_HOME}/zk/rust/target/${RUST_TARGET}/release/libillium_zk.a \
-#        -lc++
-
-    if [ -f ${ILXD_HOME}/crypto/rust/target/${RUST_TARGET}/release/libillium_crypto.a ]; then
-        echo "build_android.sh: Building ilxd_crypto_bridge.cpp for ${ARCH}..."
-        if [ -f libilxd_crypto_bridge_${ARCH}.so ]; then
-	    rm libilxd_crypto_bridge_${ARCH}.so
-        fi
-
-        $NDK_TOOLCHAIN_PATH/${TARGET_ARCH}-clang++ -shared -o libilxd_crypto_bridge_${ARCH}.so -fPIC ilxd_crypto_bridge.cpp \
-            ${ILXD_HOME}/crypto/rust/target/${RUST_TARGET}/release/libillium_crypto.a \
-            -lc++
-    else
-        echo "build_android.sh: ${ILXD_HOME}/crypto/rust/target/${RUST_TARGET}/release/libillium_crypto.a missing, can't build libilxd_crypto_bridge_${ARCH}.so"
+    # Build crypto bridge if requested
+    if [ "$BUILD_CRYPTO" = true ]; then
+        build_dart_bridge "crypto" "ilxd_crypto_bridge.cpp" "libillium_crypto.a" "$ARCH" "$TARGET_ARCH" "$RUST_TARGET"
     fi
+
+    # Build zk bridge if requested
+    if [ "$BUILD_ZK" = true ]; then
+        build_dart_bridge "zk" "ilxd_zk_bridge.cpp" "libillium_zk.a" "$ARCH" "$TARGET_ARCH" "$RUST_TARGET"
+    fi    
 done
 popd
 
 # Verify the shared libraries for all architectures
-# First, check all libilxd_crypto_* versions
-if [ ! -f "android/libilxd_crypto_bridge_arm64.so" ]; then
-    echo "Error: libilxd_crypto_bridge_arm64.so not found"
-else
-    echo "Success: libilxd_crypto_bridge_arm64.so found"
+
+if [ "$BUILD_CRYPTO" = true ]; then
+    # First, check all libilxd_crypto_* versions
+    if [ ! -f "android/libilxd_crypto_bridge_arm64.so" ]; then
+        echo "Error: libilxd_crypto_bridge_arm64.so not found"
+    else
+        echo "Success: libilxd_crypto_bridge_arm64.so found"
+    fi
+
+    if [ ! -f "android/libilxd_crypto_bridge_armv7.so" ]; then
+        echo "Error: libilxd_crypto_bridge_armv7.so not found"
+    else
+        echo "Success: libilxd_crypto_bridge_armv7.so found"
+    fi
+
+    if [ ! -f "android/libilxd_crypto_bridge_x86.so" ]; then
+        echo "Error: libilxd_crypto_bridge_x86.so not found"
+    else
+        echo "Success: libilxd_crypto_bridge_x86.so found"
+    fi
+
+    if [ ! -f "android/libilxd_crypto_bridge_x86_64.so" ]; then
+        echo "Error: libilxd_crypto_bridge_x86_64.so not found"
+    else
+        echo "Success: libilxd_crypto_bridge_x86_64.so found"
+    fi
 fi
 
-if [ ! -f "android/libilxd_crypto_bridge_armv7.so" ]; then
-    echo "Error: libilxd_crypto_bridge_armv7.so not found"
-else
-    echo "Success: libilxd_crypto_bridge_armv7.so found"
+if [ "$BUILD_ZK" = true ]; then
+    # Now, check all libilxd_zk_bridge_* versions
+    if [ ! -f "android/libilxd_zk_bridge_arm64.so" ]; then
+        echo "Error: libilxd_zk_bridge_arm64.so not found"
+    else
+	echo "Success: libilxd_zk_bridge_arm64.so found"
+    fi
+
+    if [ ! -f "android/libilxd_zk_bridge_armv7.so" ]; then
+        echo "Error: libilxd_zk_bridge_armv7.so not found"
+    else
+	echo "Success: libilxd_zk_bridge_armv7.so found"
+    fi
+
+    if [ ! -f "android/libilxd_zk_bridge_x86.so" ]; then
+        echo "Error: libilxd_zk_bridge_x86.so not found"
+    else
+	echo "Success: libilxd_zk_bridge_x86 found"
+    fi
+
+    if [ ! -f "android/libilxd_zk_bridge_x86_64.so" ]; then
+        echo "Error: libilxd_zk_bridge_x86_64.so not found"
+    else
+	echo "Success: libilxd_zk_bridge_x86_64 found"
+    fi
 fi
-
-if [ ! -f "android/libilxd_crypto_bridge_x86.so" ]; then
-    echo "Error: libilxd_crypto_bridge_x86.so not found"
-else
-    echo "Success: libilxd_crypto_bridge_x86.so found"
-fi
-
-if [ ! -f "android/libilxd_crypto_bridge_x86_64.so" ]; then
-    echo "Error: libilxd_crypto_bridge_x86_64.so not found"
-else
-    echo "Success: libilxd_crypto_bridge_x86_64.so found"
-fi
-
-# Now, check all libilxd_zk_bridge_* versions
-#if [ ! -f "android/libilxd_zk_bridge_arm64.so" ]; then
-#    echo "Error: libilxd_zk_bridge_arm64.so not found"
-#fi
-
-#if [ ! -f "android/libilxd_zk_bridge_armv7.so" ]; then
-#    echo "Error: libilxd_zk_bridge_armv7.so not found"
-#fi
-
-#if [ ! -f "android/libilxd_zk_bridge_x86.so" ]; then
-#    echo "Error: libilxd_zk_bridge_x86.so not found"
-#fi
-
-#if [ ! -f "android/libilxd_zk_bridge_x86_64.so" ]; then
-#    echo "Error: libilxd_zk_bridge_x86_64.so not found"
-#fi
 
 echo "ilxd_bridge/android:"
 ls -l android/*
